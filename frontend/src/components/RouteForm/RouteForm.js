@@ -1,83 +1,70 @@
 import React, { useState } from "react";
 import { getRoute } from "../../services/api";
 
-const getCoordinates = async (place) => {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${place}`
-  );
-  const data = await res.json();
-
-  if (data && data.length > 0) {
-    return {
-      lat: data[0].lat,
-      lon: data[0].lon,
-    };
-  }
-  return null;
-};
-
 function RouteForm({ setRouteData }) {
-
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [mode, setMode] = useState("car");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async () => {
-    const start = await getCoordinates(source);
-    const end = await getCoordinates(destination);
+    if (!source || !destination) {
+      alert("Please enter both source and destination!");
+      return;
+    }
 
-    console.log("Start:", start);
-    console.log("End:", end);
+    setLoading(true);
+    setError("");
 
-    if (start && end) {
-      // Backend expects start: { lat, lng } but getCoordinates returns { lat, lon }
-      const startPayload = { lat: start.lat, lng: start.lon };
-      const endPayload = { lat: end.lat, lng: end.lon };
+    try {
+      const data = await getRoute(source, destination, mode);
 
-      const data = await getRoute(
-        startPayload,
-        endPayload,
-        mode
-      );
-
-      setRouteData(data);
-    } else {
-      alert("Could not find coordinates for the provided locations. Please try again.");
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setRouteData(data);
+      }
+    } catch (err) {
+      setError("Failed to connect to backend. Make sure server is running!");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{padding:"30px"}}>
+    <div className="glass-panel" style={{ padding: "30px", textAlign: "center" }}>
+      <h2 style={{ color: "#39ff14", textTransform: "uppercase", letterSpacing: "2px", marginBottom: "25px" }}>Enter Route</h2>
 
-      <h2>Enter Route</h2>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "15px" }}>
+        <input
+          type="text"
+          placeholder="Enter Source City (e.g. Chennai)"
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+        />
 
-      <input
-        type="text"
-        placeholder="Enter Source City"
-        value={source}
-        onChange={(e)=>setSource(e.target.value)}
-      />
+        <input
+          type="text"
+          placeholder="Enter Destination City (e.g. Bangalore)"
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+        />
 
-      <input
-        type="text"
-        placeholder="Enter Destination City"
-        value={destination}
-        onChange={(e)=>setDestination(e.target.value)}
-      />
+        <select value={mode} onChange={(e) => setMode(e.target.value)}>
+          <option value="car">Car 🚗</option>
+          <option value="bike">Bike 🏍️</option>
+          <option value="walk">Walk 🚶</option>
+          <option value="bus">Bus 🚌</option>
+          <option value="metro">Metro 🚇</option>
+        </select>
 
-      <select
-        value={mode}
-        onChange={(e)=>setMode(e.target.value)}
-      >
-        <option value="car">Car</option>
-        <option value="bike">Bike</option>
-        <option value="walk">Walk</option>
-      </select>
+        <button onClick={handleSubmit} disabled={loading}>
+          {loading ? "Finding Route..." : "Find Route ⚡"}
+        </button>
+      </div>
 
-      <button onClick={handleSubmit}>
-        Find Route
-      </button>
-
+      {error && <p style={{ color: "#ff3939", marginTop: "15px", fontWeight: "bold" }}>{error}</p>}
     </div>
   );
 }

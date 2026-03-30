@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import RouteForm from "./components/RouteForm/RouteForm";
 import RouteResult from "./components/RouteResult/RouteResult";
+import MapComponent from "./components/MapComponent/MapComponent";
 import "./App.css";
 
 function App() {
@@ -14,6 +15,10 @@ function App() {
 
       <div className="container">
         <RouteForm setRouteData={setRouteData} />
+
+        {/* The Map Component handles its own null state visually */}
+        <MapComponent routeData={routeData} />
+
         {routeData && <RouteResult routeData={routeData} />}
       </div>
 

@@ -8,7 +8,7 @@ const emissionFactors = {
 
 function calculateCarbon(distance,mode){
 
-  const factor = emissionFactors[mode] || 100;
+  const factor = emissionFactors.hasOwnProperty(mode) ? emissionFactors[mode] : 100;
 
   const km = distance/1000;
 
